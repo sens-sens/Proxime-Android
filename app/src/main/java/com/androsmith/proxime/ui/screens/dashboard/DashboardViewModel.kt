@@ -19,7 +19,8 @@ class DashboardViewModel @Inject constructor(
 
     val sensorDataState: StateFlow<Resource<SensorData>> = sensorBluetoothService.sensorDataState
 
-    fun dispose() {
+    override fun onCleared() {
+        super.onCleared()
         sensorBluetoothService.dispose()
     }
 }

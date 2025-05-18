@@ -9,18 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -28,15 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.androsmith.proxime.domain.model.Resource
 import com.androsmith.proxime.data.model.ConnectionState
 import com.androsmith.proxime.data.model.SensorData
+import com.androsmith.proxime.domain.model.Resource
 import com.androsmith.proxime.ui.screens.dashboard.composables.DashboardAppBar
 import com.androsmith.proxime.ui.screens.dashboard.composables.IRVisualization
-import com.androsmith.proxime.ui.screens.device.DeviceList
-import com.androsmith.proxime.ui.screens.device.composables.NoDeviceAnimation
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardScreen(
@@ -65,7 +57,7 @@ fun DashboardScreen(
             ) {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(20.dp))
-                Text(sensorData.message!!)
+                Text(sensorData.message ?: "Loading")
             }
         }
 
@@ -78,91 +70,82 @@ fun DashboardScreen(
             Scaffold(
                 topBar = {
                     DashboardAppBar(
-                        onBack = {
-                            viewModel.dispose()
-                            onBack()
-                        }
+                        onBack = onBack
                     )
                 },
                 modifier = modifier.fillMaxSize(),
             ) { innerPadding ->
 
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+
+
+                    IRVisualization(
+                        isBlocked = data.isProximityBlocked
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+
+                    Spacer(Modifier.height(40.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .padding(innerPadding)
+                            .fillMaxWidth()
+                            .padding(horizontal = 40.dp)
                     ) {
-
-
-                        IRVisualization(
-                            isBlocked = data.isProximityBlocked
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .padding(horizontal = 20.dp)
+                        Text(
+                            "Button state", fontSize = 28.sp
                         )
 
-                        Spacer(Modifier.height(40.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 40.dp)
-                        ) {
-                            Text(
-                                "Button state",
-                                fontSize = 28.sp
-                            )
-
-                            Switch(
-                                checked = data.isButtonPressed,
-                                onCheckedChange = {},
-                                modifier = Modifier.scale(1.5F)
-                            )
-                        }
-
-                        Spacer(Modifier.height(40.dp))
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .padding(horizontal = 20.dp)
-                        )
-
-
-
-                        Spacer(Modifier.height(40.dp))
-
-
-                        Column(
-                            horizontalAlignment = Alignment.Start,
-                            modifier = Modifier.fillMaxWidth()
-                                .padding(horizontal = 40.dp)
-                        ) {
-                            Text(
-                                "Device      :   ${if (data.connectionState == ConnectionState.Connected) "Connected" else "Disconnected"}",
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
-                            )
-                            Text(
-                                "IR sensor  :   ${if (data.isProximityBlocked) "Blocked" else "Unblocked"}",
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
-                            )
-                            Text(
-                                "Button      :   ${if (data.isButtonPressed) "Pressed" else "Released"}",
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
-                            )
-                        }
-
-                        Spacer(Modifier.height(40.dp))
-
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .padding(horizontal = 20.dp)
+                        Switch(
+                            checked = data.isButtonPressed,
+                            onCheckedChange = {},
+                            modifier = Modifier.scale(1.5F)
                         )
                     }
+
+                    Spacer(Modifier.height(40.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+
+
+
+                    Spacer(Modifier.height(40.dp))
+
+
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 40.dp)
+                    ) {
+                        Text(
+                            "Device      :   ${if (data.connectionState == ConnectionState.Connected) "Connected" else "Disconnected"}",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                        )
+                        Text(
+                            "IR sensor  :   ${if (data.isProximityBlocked) "Blocked" else "Unblocked"}",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                        )
+                        Text(
+                            "Button      :   ${if (data.isButtonPressed) "Pressed" else "Released"}",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                        )
+                    }
+
+                    Spacer(Modifier.height(40.dp))
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
                 }
-
-
+            }
 
 
         }
