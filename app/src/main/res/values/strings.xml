@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Proxime</string>
     <string name="devices">Devices</string>
+    <string name="loading">Loading</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="navigate_back">Navigate back</string>
 </resources>

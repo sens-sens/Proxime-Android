@@ -1,6 +1,5 @@
-package com.androsmith.proxime.ui.screens.dashboard.composables
+package com.androsmith.proxime.ui.composables
 
-import android.os.Message
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +26,7 @@ fun LoadingContainer(
             .fillMaxSize(),
     ) {
         CircularProgressIndicator()
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(28.dp))
         Text(message)
     }
 }
