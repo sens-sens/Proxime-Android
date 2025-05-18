@@ -1,10 +1,6 @@
-package com.androsmith.proxime.ui.screens.device
+package com.androsmith.proxime.ui.screens.devices
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.util.Log
-import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import com.androsmith.proxime.domain.model.Resource
 import com.androsmith.proxime.data.bluetooth.SensorBluetoothService
@@ -13,7 +9,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
 
 @HiltViewModel
-class DeviceViewModel @Inject constructor(
+class DevicesViewModel @Inject constructor(
     private val sensorBluetoothService: SensorBluetoothService
 ) : ViewModel() {
 
@@ -31,6 +27,11 @@ class DeviceViewModel @Inject constructor(
 
     fun onConnect(device: BluetoothDevice) {
         sensorBluetoothService.connect(device)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        sensorBluetoothService.dispose()
     }
 
 }

@@ -49,7 +49,7 @@ fun DashboardContent(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun DashboardContentPreview() {
     val sensorData = SensorData.default()

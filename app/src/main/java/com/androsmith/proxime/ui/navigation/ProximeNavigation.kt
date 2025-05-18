@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.androsmith.proxime.ui.screens.dashboard.DashboardScreen
-import com.androsmith.proxime.ui.screens.device.DeviceScreen
+import com.androsmith.proxime.ui.screens.devices.DeviceScreen
 import com.androsmith.proxime.ui.screens.permission.PermissionScreen
 
 @Composable

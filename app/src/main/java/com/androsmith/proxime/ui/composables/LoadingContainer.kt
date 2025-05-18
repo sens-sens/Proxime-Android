@@ -31,7 +31,7 @@ fun LoadingContainer(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun LoadingContainerPreview() {
     LoadingContainer(

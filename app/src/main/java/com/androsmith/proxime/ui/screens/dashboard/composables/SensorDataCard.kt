@@ -69,7 +69,7 @@ private fun SensorDataRow(label: String, value: String) {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun SensorDataCardPreview() {
     SensorDataCard(

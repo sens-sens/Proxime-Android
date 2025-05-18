@@ -1,8 +1,7 @@
-package com.androsmith.proxime.ui.screens.device.composables
+package com.androsmith.proxime.ui.screens.devices.composables
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -20,19 +19,17 @@ fun DeviceAppBar(modifier: Modifier = Modifier) {
 
     TopAppBar(
         navigationIcon = {
-        Icon(
-            painter = painterResource(R.drawable.menu),
-            contentDescription = null,
-            modifier = Modifier.size(28.dp)
-        )
-    },
+            Icon(
+                painter = painterResource(R.drawable.menu),
+                contentDescription = null,
+                modifier = Modifier.size(28.dp)
+            )
+        },
         title = {
-            Text(stringResource(R.string.devices),
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                )
-                },
-        modifier = modifier
-            .padding(horizontal = 12.dp)
-        )
+            Text(
+                stringResource(R.string.devices), modifier = Modifier.padding(start = 8.dp)
+            )
+        },
+        modifier = modifier.padding(horizontal = 12.dp),
+    )
 }

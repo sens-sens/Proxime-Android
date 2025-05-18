@@ -13,13 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androsmith.proxime.R
 
 @Composable
 fun ProximityContainer(
-    isBlocked: Boolean,
-    modifier: Modifier = Modifier
+    isBlocked: Boolean, modifier: Modifier = Modifier
 ) {
 
 
@@ -30,17 +30,9 @@ fun ProximityContainer(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(360.dp),
-        contentAlignment = Alignment.Center
-    ){
-//        Text("IR Sensor",
-//            fontSize = 24.sp,
-//            modifier = Modifier
-//                .align(
-//                    alignment = Alignment.TopCenter
-//                )
-//                .padding(40.dp)
-//        )
+            .height(360.dp), contentAlignment = Alignment.Center
+    ) {
+
         Image(
             painter = painterResource(R.drawable.ir),
             contentDescription = "IR sensor",
@@ -59,4 +51,20 @@ fun ProximityContainer(
                 .rotate(-90F)
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProximityContainerBlockedPreview() {
+    ProximityContainer(
+        isBlocked = true
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProximityContainerPreview() {
+    ProximityContainer(
+        isBlocked = false
+    )
 }

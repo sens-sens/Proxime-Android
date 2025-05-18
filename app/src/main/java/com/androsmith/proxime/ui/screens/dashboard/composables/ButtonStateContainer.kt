@@ -33,7 +33,7 @@ fun ButtonStateContainer(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun ButtonStateContainerPreview() {
     ButtonStateContainer(

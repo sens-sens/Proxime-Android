@@ -21,7 +21,7 @@ fun ErrorContainer(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun ErrorContainerPreview() {
     ErrorContainer()
