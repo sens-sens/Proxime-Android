@@ -22,7 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,7 +30,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.androsmith.proxime.R
+import com.androsmith.proxime.domain.model.Resource
 import com.androsmith.proxime.ui.screens.device.composables.DeviceAppBar
 import com.androsmith.proxime.ui.screens.device.composables.NoDeviceAnimation
 import com.androsmith.proxime.ui.screens.device.composables.ScanDevicesButton
@@ -42,37 +44,51 @@ fun DeviceScreen(
     viewModel: DeviceViewModel = hiltViewModel(),
 ) {
 
-    val devices = viewModel.devices.collectAsState()
 
-    Scaffold(
-        topBar = { DeviceAppBar() },
-        floatingActionButton = {
-            ScanDevicesButton(
-                onClick = viewModel::startScanning
-            )
-        },
-        modifier = modifier.fillMaxSize(),
-    ) { innerPadding ->
+    val scanResults by viewModel.scanResultsState.collectAsStateWithLifecycle()
 
-
-        if (devices.value.isEmpty()) {
-
+    when (scanResults) {
+        is Resource.Loading -> {
             Box(
                 modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
                 NoDeviceAnimation()
             }
-        } else {
-            DeviceList(
-                onConnect = {
-                    viewModel.onConnect(it)
-                    navigateToDashBoard()
-                },
-                devices = devices.value, modifier = Modifier.padding(innerPadding)
-            )
         }
 
+        is Resource.Error -> {
+            Box(
+                modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            ) {
+                NoDeviceAnimation()
+            }
+        }
+        is Resource.Success -> {
+
+            val devices = scanResults.data ?: emptyList()
+            Scaffold(
+                topBar = { DeviceAppBar() },
+                floatingActionButton = {
+                    ScanDevicesButton(
+                        onClick = viewModel::startScanning
+                    )
+                },
+                modifier = modifier.fillMaxSize(),
+            ) { innerPadding ->
+
+
+                    DeviceList(
+                        onConnect = {
+                    viewModel.onConnect(it)
+                            navigateToDashBoard()
+                        },
+                        devices = devices, modifier = Modifier.padding(innerPadding)
+                    )
+
+            }
+        }
     }
+
 }
 
 

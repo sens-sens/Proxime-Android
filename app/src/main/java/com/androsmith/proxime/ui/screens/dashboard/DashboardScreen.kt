@@ -18,6 +18,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -27,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.androsmith.proxime.domain.model.Resource
+import com.androsmith.proxime.data.model.ConnectionState
+import com.androsmith.proxime.data.model.SensorData
 import com.androsmith.proxime.ui.screens.dashboard.composables.DashboardAppBar
 import com.androsmith.proxime.ui.screens.dashboard.composables.IRVisualization
 import com.androsmith.proxime.ui.screens.device.DeviceList
@@ -41,101 +45,122 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
 
-    val isConnected = viewModel.isConnected.collectAsStateWithLifecycle()
 
+    val sensorData by viewModel.sensorDataState.collectAsStateWithLifecycle()
 
-
-    val ir = viewModel.ir.collectAsStateWithLifecycle()
-    val button = viewModel.button.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) {
-            delay(1000)
-            viewModel.discover()
-            delay(500)
-            viewModel.startNotify()
-    }
-
-
-    Scaffold(
-        topBar = { DashboardAppBar(
-            onBack = onBack
-        ) },
-    modifier = modifier.fillMaxSize(),
-    ) { innerPadding ->
-
-
-        if (!isConnected.value) {
-
+    when (sensorData) {
+        is Resource.Error -> {
             Box(
                 modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .padding(innerPadding)
+        }
+
+        is Resource.Loading -> {
+            Box(
+                modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
-
-
-                IRVisualization(
-                    isBlocked = ir.value
-                )
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                )
-
-                Spacer(Modifier.height(40.dp))
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 40.dp)
-                ) {
-                    Text("Button state",
-                    fontSize = 28.sp
-                    )
-
-                    Switch(
-                        checked = button.value,
-                        onCheckedChange = {},
-                        modifier = Modifier.scale(1.5F)
-                    )
-                }
-
-                Spacer(Modifier.height(40.dp))
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                )
-
-
-
-                Spacer(Modifier.height(40.dp))
-
-
-             Column(
-                 horizontalAlignment = Alignment.Start,
-                 modifier = Modifier.fillMaxWidth()
-                     .padding(horizontal = 40.dp)
-             ) {
-                 Text("Device      :   ${if(isConnected.value) "Connected" else "Disconnected"}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F))
-                 Text("IR sensor  :   ${if(ir.value) "Blocked" else "Unblocked"}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F))
-                 Text("Button      :   ${if(button.value) "Pressed" else "Released"}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F))
-             }
-
-                Spacer(Modifier.height(40.dp))
-
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                )
+                CircularProgressIndicator()
             }
         }
 
+        is Resource.Success -> {
+            val data = sensorData.data ?: SensorData(
+                isProximityBlocked = false,
+                isButtonPressed = false,
+                connectionState = ConnectionState.Disconnected
+            )
+            Scaffold(
+                topBar = {
+                    DashboardAppBar(
+                        onBack = {
+                            viewModel.dispose()
+                            onBack()
+                        }
+                    )
+                },
+                modifier = modifier.fillMaxSize(),
+            ) { innerPadding ->
+
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .padding(innerPadding)
+                    ) {
+
+
+                        IRVisualization(
+                            isBlocked = data.isProximityBlocked
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                        )
+
+                        Spacer(Modifier.height(40.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 40.dp)
+                        ) {
+                            Text(
+                                "Button state",
+                                fontSize = 28.sp
+                            )
+
+                            Switch(
+                                checked = data.isButtonPressed,
+                                onCheckedChange = {},
+                                modifier = Modifier.scale(1.5F)
+                            )
+                        }
+
+                        Spacer(Modifier.height(40.dp))
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                        )
+
+
+
+                        Spacer(Modifier.height(40.dp))
+
+
+                        Column(
+                            horizontalAlignment = Alignment.Start,
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(horizontal = 40.dp)
+                        ) {
+                            Text(
+                                "Device      :   ${if (data.connectionState == ConnectionState.Connected) "Connected" else "Disconnected"}",
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                            )
+                            Text(
+                                "IR sensor  :   ${if (data.isProximityBlocked) "Blocked" else "Unblocked"}",
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                            )
+                            Text(
+                                "Button      :   ${if (data.isButtonPressed) "Pressed" else "Released"}",
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7F)
+                            )
+                        }
+
+                        Spacer(Modifier.height(40.dp))
+
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(horizontal = 20.dp)
+                        )
+                    }
+                }
+
+
+
+
+        }
     }
 }
-

@@ -3,33 +3,34 @@ package com.androsmith.proxime.ui.screens.device
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
-import com.androsmith.proxime.domain.bluetooth.BLEManager
+import com.androsmith.proxime.domain.model.Resource
+import com.androsmith.proxime.data.bluetooth.SensorBluetoothService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.StateFlow
 
-@SuppressLint("MissingPermission")
 @HiltViewModel
 class DeviceViewModel @Inject constructor(
-    private val bleManager: BLEManager
+    private val sensorBluetoothService: SensorBluetoothService
 ) : ViewModel() {
 
     init {
         startScanning()
     }
 
-    val devices = bleManager.devices
+    val scanResultsState: StateFlow<Resource<List<BluetoothDevice>>> =
+        sensorBluetoothService.scanResultsState
 
 
-
-    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     fun startScanning() {
-        bleManager.scanDevices()
+        sensorBluetoothService.scanDevices()
     }
 
     fun onConnect(device: BluetoothDevice) {
-        bleManager.connect(device)
+        sensorBluetoothService.connect(device)
     }
 
 }
