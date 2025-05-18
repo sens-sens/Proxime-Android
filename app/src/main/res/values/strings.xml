@@ -5,4 +5,6 @@
     <string name="dashboard">Dashboard</string>
     <string name="navigate_back">Navigate back</string>
     <string name="scan_devices">Scan Devices</string>
+    <string name="bluetooth_not_available">Bluetooth not available</string>
+    <string name="turn_on">Turn On</string>
 </resources>

@@ -16,25 +16,30 @@ fun ProximeNavigation(
 ) {
 
 
-    NavHost(navController, startDestination = Screens.Permission) {
+    NavHost(
+        navController,
+        startDestination = Screens.Permission,
+        modifier = modifier,
+    ) {
         composable<Screens.Permission> {
             PermissionScreen(
                 onPermissionGranted = {
                     navController.navigate(Screens.Device)
-                })
+                },
+            )
         }
         composable<Screens.Device> {
             DeviceScreen(
                 navigateToDashBoard = {
                     navController.navigate(Screens.Dashboard)
-                }
+                },
             )
         }
         composable<Screens.Dashboard> {
             DashboardScreen(
                 onBack = {
                     navController.popBackStack()
-                }
+                },
             )
         }
     }
