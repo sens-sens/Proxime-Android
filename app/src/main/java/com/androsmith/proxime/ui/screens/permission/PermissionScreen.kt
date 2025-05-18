@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.androsmith.proxime.core.BLE_PERMISSIONS
+import com.androsmith.proxime.domain.permissions.Permissions.BLE_PERMISSIONS
 
 @Composable
 fun PermissionScreen(

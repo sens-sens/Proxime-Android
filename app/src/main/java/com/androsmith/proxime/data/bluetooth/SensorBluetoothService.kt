@@ -12,9 +12,9 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.util.Log
-import com.androsmith.proxime.domain.model.Resource
 import com.androsmith.proxime.data.model.ConnectionState
 import com.androsmith.proxime.data.model.SensorData
+import com.androsmith.proxime.domain.model.Resource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,14 +26,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.lang.Byte
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.Int
-import kotlin.String
-import kotlin.getValue
-import kotlin.lazy
 
 
 @Singleton
@@ -43,23 +38,30 @@ class SensorBluetoothService @Inject constructor(
     private val bluetoothAdapter: BluetoothAdapter,
 ) : BluetoothService {
 
+    companion object {
 
-    private val _sensorDataState = MutableStateFlow<Resource<SensorData>>(Resource.Loading())
+
+        const val CCD_DESCRIPTOR = "00002902-0000-1000-8000-00805f9b34fb"
+
+
+        val PROXIME_SERVICE_UUID = UUID.fromString("65e34af1-d6f5-498e-a782-ada0cac2768d")
+        val PROXIMITY_SENSOR_CHARACTERISTICS_UUID =
+            UUID.fromString("c11c329c-ffda-4420-b581-7feab0e47775")
+        val BUTTON_PRESS_CHARACTERISTIC_UUID =
+            UUID.fromString("2b089712-34da-4fc9-b692-ad3fe0a13e13")
+
+    }
+
+
+    private val _sensorDataState =
+        MutableStateFlow<Resource<SensorData>>(Resource.Success(SensorData.default()))
     val sensorDataState: StateFlow<Resource<SensorData>> = _sensorDataState.asStateFlow()
 
 
     private val _scanResultsState =
-        MutableStateFlow<Resource<List<BluetoothDevice>>>(Resource.Loading())
+        MutableStateFlow<Resource<List<BluetoothDevice>>>(Resource.Loading("Scanning devices"))
     val scanResultsState: StateFlow<Resource<List<BluetoothDevice>>> =
         _scanResultsState.asStateFlow()
-
-
-    val CCD_DESCRIPTOR = "00002902-0000-1000-8000-00805f9b34fb"
-
-
-    val proximeServiceUUID = UUID.fromString("65e34af1-d6f5-498e-a782-ada0cac2768d")
-    val proximitySensorCharacteristicUUID = UUID.fromString("c11c329c-ffda-4420-b581-7feab0e47775")
-    val buttonPressCharacteristicUUID = UUID.fromString("2b089712-34da-4fc9-b692-ad3fe0a13e13")
 
     private val scanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
@@ -83,9 +85,9 @@ class SensorBluetoothService @Inject constructor(
                 _scanResultsState.update { currentState ->
                     val existingDevices =
                         (currentState as? Resource.Success)?.data ?: emptyList<BluetoothDevice>()
-                    val updatedDevices = existingDevices + result.device
+
                     Resource.Success(
-                        data = updatedDevices
+                        data = existingDevices + result.device
                     )
 
                 }
@@ -100,11 +102,9 @@ class SensorBluetoothService @Inject constructor(
 
     override fun scanDevices() {
 
-        coroutineScope.launch {
-            _scanResultsState.emit(
-                Resource.Loading()
-            )
-        }
+
+        _scanResultsState.value = Resource.Loading("Scanning devices")
+
         scanner.startScan(scanCallback)
 
         coroutineScope.launch {
@@ -121,30 +121,29 @@ class SensorBluetoothService @Inject constructor(
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d("BLE", "Gatt successful!")
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
+
+                    _sensorDataState.value = Resource.Loading(message = "Discovering services")
+
                     gatt?.discoverServices()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    coroutineScope.launch {
-                        _sensorDataState.emit(
-                            Resource.Success(
-                                data = SensorData(
-                                    isProximityBlocked = false,
-                                    isButtonPressed = false,
-                                    connectionState = ConnectionState.Disconnected
-                                )
-                            )
+
+
+                    _sensorDataState.value = Resource.Success(
+                        data = SensorData(
+                            isProximityBlocked = false,
+                            isButtonPressed = false,
+                            connectionState = ConnectionState.Disconnected
                         )
-                    }
+                    )
+
                     gatt?.close()
                 }
             } else {
 
-                Log.d("BLE", "Gatt successful!")
-                coroutineScope.launch {
-                    _sensorDataState.emit(
-                        Resource.Error(message = "Connection failed!")
-                    )
-                }
+                _sensorDataState.value = Resource.Error(message = "Connection failed!")
+
                 gatt?.close()
+                bluetoothGatt = null
             }
         }
 
@@ -157,40 +156,41 @@ class SensorBluetoothService @Inject constructor(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            when (characteristic.uuid) {
-                proximitySensorCharacteristicUUID -> _sensorDataState.update { currentState ->
-                    val buttonPressedValue =
-                        (currentState as? Resource.Success)?.data?.isButtonPressed ?: false
-                    val proximitySensorValue = characteristic.value[0] == Byte.valueOf(1)
-                    Resource.Success(
-                        SensorData(
-                            isProximityBlocked = proximitySensorValue,
-                            isButtonPressed = buttonPressedValue,
-                            connectionState = ConnectionState.Connected,
-                        )
-                    )
+
+            val currentSensorData =
+                (_sensorDataState.value as? Resource.Success)?.data ?: SensorData.default()
+                    .copy(connectionState = ConnectionState.Connected)
+
+
+            val newSensorData = when (characteristic.uuid) {
+                PROXIMITY_SENSOR_CHARACTERISTICS_UUID -> {
+
+                    val proximitySensorValue = characteristic.value[0] == 1.toByte()
+                    currentSensorData.copy(isProximityBlocked = proximitySensorValue)
+
                 }
 
-                buttonPressCharacteristicUUID -> _sensorDataState.update { currentState ->
-                    val buttonPressedValue = characteristic.value[0] == Byte.valueOf(1)
-                    val proximitySensorValue =
-                        (currentState as? Resource.Success)?.data?.isProximityBlocked ?: false
+                BUTTON_PRESS_CHARACTERISTIC_UUID -> {
 
-                    Resource.Success(
-                        SensorData(
-                            isProximityBlocked = proximitySensorValue,
-                            isButtonPressed = buttonPressedValue,
-                            connectionState = ConnectionState.Connected,
-                        )
-                    )
+                    val buttonPressedValue = characteristic.value[0] == 1.toByte()
+                    currentSensorData.copy(isButtonPressed = buttonPressedValue)
                 }
+
+                else -> null
+            }
+
+            newSensorData?.let {
+                _sensorDataState.value = Resource.Success(it)
             }
         }
 
     }
 
     override fun connect(device: BluetoothDevice) {
-        Log.d("BLE", "Connecting to device $device")
+
+
+        _sensorDataState.value = Resource.Loading(message = "Connecting to device")
+
         bluetoothGatt = device.connectGatt(context, false, callback)
 
     }
@@ -201,31 +201,31 @@ class SensorBluetoothService @Inject constructor(
 
 
     override fun startListening() {
-        val service = bluetoothGatt?.getService(proximeServiceUUID)
+        val service = bluetoothGatt?.getService(PROXIME_SERVICE_UUID)
         if (service == null) {
             Log.d("BLE", "Service not found")
-            coroutineScope.launch {
-                _sensorDataState.emit(
-                    Resource.Error("Service not found!")
-                )
-            }
+
+            _sensorDataState.value =
+                Resource.Error("Service not found!")
+
+
         } else {
 
-            coroutineScope.launch {
-                _sensorDataState.emit(
-                    Resource.Success(
-                        data = SensorData(
-                            isProximityBlocked = false,
-                            isButtonPressed = false,
-                            connectionState = ConnectionState.Connected
-                        )
+
+            _sensorDataState.value =
+                Resource.Success(
+                    data = SensorData(
+                        isProximityBlocked = false,
+                        isButtonPressed = false,
+                        connectionState = ConnectionState.Connected
                     )
                 )
-            }
 
-            val buttonPressCharacteristic = service.getCharacteristic(buttonPressCharacteristicUUID)
+
+            val buttonPressCharacteristic =
+                service.getCharacteristic(BUTTON_PRESS_CHARACTERISTIC_UUID)
             val proximitySensorCharacteristic =
-                service.getCharacteristic(proximitySensorCharacteristicUUID)
+                service.getCharacteristic(PROXIMITY_SENSOR_CHARACTERISTICS_UUID)
 
             enableNotification(buttonPressCharacteristic)
             enableNotification(proximitySensorCharacteristic)
@@ -243,17 +243,14 @@ class SensorBluetoothService @Inject constructor(
     private fun writeDescription(
         characteristic: BluetoothGattCharacteristic,
     ) {
-        val CLIENT_CONFIG_DESCRIPTOR = UUID.fromString(CCD_DESCRIPTOR)
-        val descriptor = characteristic.getDescriptor(CLIENT_CONFIG_DESCRIPTOR)
+        val CCD_UUID = UUID.fromString(CCD_DESCRIPTOR)
+        val descriptor = characteristic.getDescriptor(CCD_UUID)
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
         bluetoothGatt?.writeDescriptor(descriptor)
     }
 
 
-    override suspend fun dispose() {
-        _sensorDataState.emit(
-            Resource.Loading()
-        )
+    override fun dispose() {
         scanner.stopScan(scanCallback)
         bluetoothGatt?.close()
         coroutineScope.cancel()

@@ -58,10 +58,14 @@ fun DashboardScreen(
         }
 
         is Resource.Loading -> {
-            Box(
-                modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = modifier.fillMaxSize()
             ) {
                 CircularProgressIndicator()
+                Spacer(Modifier.height(20.dp))
+                Text(sensorData.message!!)
             }
         }
 

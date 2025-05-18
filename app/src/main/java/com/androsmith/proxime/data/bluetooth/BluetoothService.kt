@@ -12,6 +12,6 @@ interface BluetoothService {
 
     fun startListening()
 
-    suspend fun dispose()
+    fun dispose()
 
 }
